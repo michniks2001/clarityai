@@ -9,9 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.10.4",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "axios": "^1.7.9",
+    "framer-motion": "^11.14.4",
+    "next": "14.2.17",
+    "openai": "^4.76.3",
     "react": "^18",
+    "react-confetti": "^6.1.0",
     "react-dom": "^18",
-    "next": "14.2.17"
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "eslint": "^8",
