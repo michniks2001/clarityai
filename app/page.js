@@ -636,7 +636,7 @@ Always ensure the output remains clear, structured, and supportive, no matter ho
               </ModalContent>
             ) : (
               <ModalContent>
-                <Heading>Please add tasks!</Heading>
+                <Heading fontSize="xl" mb={4} color="purple.600">Please provide at least one task.</Heading>
               </ModalContent>
             )}
           </Modal>
