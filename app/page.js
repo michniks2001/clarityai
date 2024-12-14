@@ -24,6 +24,7 @@ import {
   ModalCloseButton,
   useDisclosure,
   chakra,
+  useToast,
 } from '@chakra-ui/react';
 import { motion } from "framer-motion"
 import OpenAI from 'openai';
@@ -44,6 +45,8 @@ const Home = () => {
 
   const { isOpen, onOpen, onClose } = useDisclosure()
 
+  const toast = useToast()
+
   const openai = new OpenAI({
     apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
     dangerouslyAllowBrowser: true,
@@ -55,6 +58,12 @@ const Home = () => {
 
   const getResponse = async () => {
     setLoading(true);
+
+    if (tasks.length === 0) {
+      toast({ title: "Invalid form submission.", description: "You have not entered any tasks.", status: 'error', duration: 9000, isClosable: true })
+      setLoading(false)
+      return;
+    }
 
     // Format all tasks into a string for the prompt
     const formattedTasks = tasks
@@ -636,7 +645,7 @@ Always ensure the output remains clear, structured, and supportive, no matter ho
               </ModalContent>
             ) : (
               <ModalContent>
-                <Heading fontSize="xl" mb={4} color="purple.600">Please provide at least one task.</Heading>
+                <ModalHeader fontSize="xl" mb={4} color="purple.600">Please provide at least one task.</ModalHeader>
               </ModalContent>
             )}
           </Modal>
