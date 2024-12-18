@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getFirestore, addDoc, collection, Timestamp, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, addDoc, collection, Timestamp, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { app } from "@/app/firebase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -21,6 +21,7 @@ export async function POST(req) {
             );
         }
 
+        // Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'subscription',
@@ -44,7 +45,7 @@ export async function POST(req) {
         }
 
         try {
-            // First, check if the user already exists in the subscribers collection
+            // Check if the user already exists in the subscribers collection
             const subscribersRef = collection(db, 'subscribers');
             const existingSubscriberQuery = query(
                 subscribersRef,
@@ -62,15 +63,24 @@ export async function POST(req) {
                 );
             }
 
-            // If not already subscribed, proceed with adding the new subscription
+            // If not already subscribed, add the new subscription and store the session ID and subscriptionId
             const docRef = await addDoc(subscribersRef, {
                 userId,
                 createdAt: Timestamp.fromDate(new Date()),
                 status_: 'subscribed',
                 checkoutSessionId: session.id,
+                subscriptionId: '', // Placeholder for the subscriptionId
             });
 
             console.log('Document written with ID:', docRef.id);
+
+            // Now that the user is successfully subscribed, retrieve the subscriptionId from Stripe and update the Firestore document
+            const subscription = await stripe.subscriptions.retrieve(session.subscription);
+
+            // Update the subscriber document with the Stripe subscriptionId
+            await updateDoc(doc(db, 'subscribers', docRef.id), {
+                subscriptionId: subscription.id,
+            });
 
             return new Response(
                 JSON.stringify({ message: 'Subscription successful', docId: docRef.id }),

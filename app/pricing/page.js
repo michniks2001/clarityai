@@ -12,7 +12,7 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { loadStripe } from "@stripe/stripe-js";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { app } from "../firebase.js";
 import Link from "next/link.js";
@@ -23,24 +23,38 @@ const PricingPage = () => {
     const auth = getAuth(app);
     const db = getFirestore(app);
     const toast = useToast();
+    const [user, setUser] = useState(null)
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
 
-    const confirmSubscription = async () => {
-        const user = auth.currentUser
+    useEffect(() => {
+        const auth = getAuth(app);
 
+        // Listen for auth state changes
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+        });
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, []); // Empty dependency array to run only once
+
+
+    const confirmSubscription = async () => {
         const q = query(collection(db, 'subscribers'), where('userId', '==', user.uid))
 
-        const querySnap = await getDocs(q)
-            .then(() => { if (!querySnap.empty) { setIsSubscribed(true) } })
-        console.log(querySnap)
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach((doc) => {
+            if (doc.get('userId') == user.uid) {
+                setIsSubscribed(true)
+            }
+        })
     }
 
 
-
     const handleCheckout = async () => {
-        const user = auth.currentUser;
 
         if (!user) {
             toast({
@@ -162,7 +176,7 @@ const PricingPage = () => {
                                 <Text color="gray.600">Organize your tasks efficiently</Text>
                                 <Text color="gray.600">No downloads available</Text>
                             </VStack>
-                            {auth.currentUser !== null ? (
+                            {!user ? (
                                 <Button
                                     as="a"
                                     href="/sign-up"
@@ -193,7 +207,7 @@ const PricingPage = () => {
                                     }}
                                     transition="all 0.2s ease"
                                 >
-                                    Sign Up for Free
+                                    Already Signed In
                                 </Button>
                             )}
                         </Box>
@@ -228,7 +242,7 @@ const PricingPage = () => {
                             </Text>
                             <Button
                                 onClick={handleCheckout}
-                                isDisabled={!isSubscribed}
+                                isDisabled={isSubscribed}
                                 bgGradient="linear(to-r, #6a11cb 0%, #2575fc 100%)"
                                 color="white"
                                 size="lg"
@@ -240,7 +254,7 @@ const PricingPage = () => {
                                 }}
                                 transition="all 0.2s ease"
                             >
-                                Go Premium
+                                {isSubscribed ? "Already Subscribed" : "Go Premium"}
                             </Button>
                         </Box>
                     </Stack>
